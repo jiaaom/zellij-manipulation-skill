@@ -62,6 +62,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=100,
         help="last N lines to print when --full is not set (default: 100)",
     )
+    parser.add_argument(
+        "--timeout-seconds",
+        type=float,
+        default=5.0,
+        help="timeout for the zellij dump-screen command (default: 5.0)",
+    )
     return parser
 
 
@@ -87,10 +93,18 @@ def print_default_overview(parser: argparse.ArgumentParser) -> None:
     raise SystemExit(0)
 
 
-def dump_current_pane(session: str) -> str:
+def dump_current_pane(session: str, timeout_seconds: float) -> str:
     dump_path = Path(tempfile.gettempdir()) / f"openclaw-zellij-dump-{os.getpid()}.txt"
     # --full is useful even for TUIs because it captures the current rendered screen buffer.
-    run(zellij_action_cmd(session, "dump-screen", "--full", str(dump_path)))
+    run(
+        zellij_action_cmd(session, "dump-screen", "--full", str(dump_path)),
+        timeout_seconds=timeout_seconds,
+    )
+    if not dump_path.exists():
+        fail(
+            "zellij action dump-screen returned without creating the dump file. "
+            "This can happen when the target session is detached or the pane does not expose a dumpable screen buffer."
+        )
     return dump_path.read_text()
 
 
@@ -111,6 +125,8 @@ def main() -> None:
     args = parse_args()
     if args.lines <= 0:
         fail("--lines must be a positive integer")
+    if args.timeout_seconds <= 0:
+        fail("--timeout-seconds must be a positive number")
 
     session = args.session or find_current_session()
     metadata = parse_metadata(find_session_metadata_file(session))
@@ -128,11 +144,21 @@ def main() -> None:
         if origin_id != target.normalized_id:
             from zellij_common import focus_pane
 
-            focus_pane(session, metadata, target)
-        content = dump_current_pane(session)
+            focus_pane(
+                session,
+                metadata,
+                target,
+                timeout_seconds=args.timeout_seconds,
+            )
+        content = dump_current_pane(session, args.timeout_seconds)
     finally:
         if origin_id != target.normalized_id:
-            restore_origin(session, metadata, origin_id)
+            restore_origin(
+                session,
+                metadata,
+                origin_id,
+                timeout_seconds=args.timeout_seconds,
+            )
 
     output = content if args.full else limit_lines(content, args.lines)
     sys.stdout.write(output)

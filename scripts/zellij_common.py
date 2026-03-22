@@ -39,13 +39,22 @@ def fail(message: str) -> "NoReturn":
     raise SystemExit(1)
 
 
-def run(args: list[str], *, capture_output: bool = True) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        args,
-        check=True,
-        text=True,
-        capture_output=capture_output,
-    )
+def run(
+    args: list[str],
+    *,
+    capture_output: bool = True,
+    timeout_seconds: float | None = None,
+) -> subprocess.CompletedProcess[str]:
+    try:
+        return subprocess.run(
+            args,
+            check=True,
+            text=True,
+            capture_output=capture_output,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired:
+        fail(f"Timed out after {timeout_seconds}s: {' '.join(args)}")
 
 
 def zellij_action_cmd(session: str | None, *action_args: str) -> list[str]:
@@ -179,8 +188,11 @@ def parse_metadata(path: Path) -> SessionMetadata:
     return SessionMetadata(tabs_by_position=tabs_by_position, panes=panes)
 
 
-def current_pane_id(session: str) -> str:
-    result = run(zellij_action_cmd(session, "list-clients")).stdout.strip().splitlines()
+def current_pane_id(session: str, *, timeout_seconds: float | None = None) -> str:
+    result = run(
+        zellij_action_cmd(session, "list-clients"),
+        timeout_seconds=timeout_seconds,
+    ).stdout.strip().splitlines()
     if not result:
         fail("zellij action list-clients returned no output")
     last = result[-1].split()
@@ -307,12 +319,21 @@ def select_target_pane(
     fail("Multiple panes matched:\n" + "\n".join(summary))
 
 
-def focus_pane(session: str, metadata: SessionMetadata, target: PaneInfo) -> None:
+def focus_pane(
+    session: str,
+    metadata: SessionMetadata,
+    target: PaneInfo,
+    *,
+    timeout_seconds: float | None = None,
+) -> None:
     target_tab = metadata.tabs_by_position.get(target.tab_position)
     if target_tab is None:
         fail(f"Could not resolve tab for target pane {target.normalized_id}")
 
-    run(zellij_action_cmd(session, "go-to-tab-name", target_tab.name))
+    run(
+        zellij_action_cmd(session, "go-to-tab-name", target_tab.name),
+        timeout_seconds=timeout_seconds,
+    )
 
     tab_panes = [
         pane
@@ -324,24 +345,38 @@ def focus_pane(session: str, metadata: SessionMetadata, target: PaneInfo) -> Non
 
     # Walk panes until we either land on the target or wrap back to where we started.
     for _ in range(max_steps):
-        current = current_pane_id(session)
+        current = current_pane_id(session, timeout_seconds=timeout_seconds)
         if current == target.normalized_id:
             return
         if first_seen is None:
             first_seen = current
         elif current == first_seen:
             break
-        run(zellij_action_cmd(session, "focus-next-pane"))
+        run(
+            zellij_action_cmd(session, "focus-next-pane"),
+            timeout_seconds=timeout_seconds,
+        )
 
     fail(f"Could not focus target pane {target.normalized_id} in tab '{target_tab.name}'")
 
 
-def restore_origin(session: str, metadata: SessionMetadata, origin_id: str) -> None:
+def restore_origin(
+    session: str,
+    metadata: SessionMetadata,
+    origin_id: str,
+    *,
+    timeout_seconds: float | None = None,
+) -> None:
     pane_map = {pane.normalized_id: pane for pane in metadata.panes}
     origin = pane_map.get(origin_id)
     if origin is None:
         return
     try:
-        focus_pane(session, metadata, origin)
+        focus_pane(
+            session,
+            metadata,
+            origin,
+            timeout_seconds=timeout_seconds,
+        )
     except SystemExit:
         print(f"Warning: failed to restore focus to {origin_id}", file=sys.stderr)
