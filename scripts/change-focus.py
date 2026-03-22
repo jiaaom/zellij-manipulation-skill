@@ -24,9 +24,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
         description="Change zellij focus to a specific tab, or to a specific pane inside a tab.",
         epilog=(
             "Examples:\n"
-            "  change-focus.py --tab test\n"
-            "  change-focus.py --tab test --pane-id 2\n"
-            "  change-focus.py --tab openclaw-renamed\n"
+            "  change-focus.py --tab work\n"
+            "  change-focus.py --tab work --pane-id 2\n"
+            "  change-focus.py --tab scratch\n"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

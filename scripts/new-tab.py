@@ -20,8 +20,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         epilog=(
             "Examples:\n"
             "  new-tab.py\n"
-            "  new-tab.py --session friendly-zebra\n"
-            "  new-tab.py --session friendly-zebra --name scratch"
+            "  new-tab.py --session my-session\n"
+            "  new-tab.py --session my-session --name scratch"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

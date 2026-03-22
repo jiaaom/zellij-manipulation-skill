@@ -49,8 +49,8 @@ Rules:
 Dump a pane:
 
 ```bash
-python3 {baseDir}/scripts/dump-pane.py --tab test --pane-id 2 --lines 80
-python3 {baseDir}/scripts/dump-pane.py --tab test --pane-id 2 --full
+python3 {baseDir}/scripts/dump-pane.py --tab work --pane-id 2 --lines 80
+python3 {baseDir}/scripts/dump-pane.py --tab work --pane-id 2 --full
 ```
 
 Detailed notes:
@@ -62,17 +62,17 @@ Detailed notes:
 Run a shell command in a pane:
 
 ```bash
-python3 {baseDir}/scripts/run-in-pane.py --tab test --pane-id 5 -- pwd
-python3 {baseDir}/scripts/run-in-pane.py --tab test --pane-id 2 -- btop
+python3 {baseDir}/scripts/run-in-pane.py --tab work --pane-id 5 -- pwd
+python3 {baseDir}/scripts/run-in-pane.py --tab work --pane-id 2 -- btop
 ```
 
 Send keys or control input:
 
 ```bash
-python3 {baseDir}/scripts/send-keys.py --tab test --pane-id 2 --text "hello"
-python3 {baseDir}/scripts/send-keys.py --tab test --pane-id 2 --control enter
-python3 {baseDir}/scripts/send-keys.py --tab test --pane-id 2 --control ctrl-c
-python3 {baseDir}/scripts/send-keys.py --tab test --pane-id 2 --control up
+python3 {baseDir}/scripts/send-keys.py --tab work --pane-id 2 --text "hello"
+python3 {baseDir}/scripts/send-keys.py --tab work --pane-id 2 --control enter
+python3 {baseDir}/scripts/send-keys.py --tab work --pane-id 2 --control ctrl-c
+python3 {baseDir}/scripts/send-keys.py --tab work --pane-id 2 --control up
 ```
 
 Supported named control keys:
@@ -103,8 +103,8 @@ python3 {baseDir}/scripts/rename-tab.py --tab old-name --name new-name
 Change focus:
 
 ```bash
-python3 {baseDir}/scripts/change-focus.py --tab test
-python3 {baseDir}/scripts/change-focus.py --tab test --pane-id 2
+python3 {baseDir}/scripts/change-focus.py --tab work
+python3 {baseDir}/scripts/change-focus.py --tab work --pane-id 2
 ```
 
 ## Caveats

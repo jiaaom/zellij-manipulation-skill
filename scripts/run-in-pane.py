@@ -23,9 +23,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
         description="Run a shell command in a specific zellij pane by sending text followed by Enter.",
         epilog=(
             "Examples:\n"
-            "  run-in-pane.py --tab test --pane-id 2 -- command\n"
-            "  run-in-pane.py --tab test --pane-id 2 -- btop\n"
-            "  run-in-pane.py --tab test --pane-id 5 -- ls -la"
+            "  run-in-pane.py --tab work --pane-id 2 -- command\n"
+            "  run-in-pane.py --tab work --pane-id 2 -- htop\n"
+            "  run-in-pane.py --tab work --pane-id 5 -- ls -la"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -71,7 +71,7 @@ def normalized_command(parts: list[str]) -> str:
     if parts and parts[0] == "--":
         parts = parts[1:]
     if not parts:
-        raise SystemExit("No command provided. Pass it after --, eg. run-in-pane.py --tab test --pane-id 2 -- btop")
+        raise SystemExit("No command provided. Pass it after --, eg. run-in-pane.py --tab work --pane-id 2 -- htop")
     return " ".join(parts)
 
 

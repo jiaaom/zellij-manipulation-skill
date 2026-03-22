@@ -21,3 +21,9 @@ Core entrypoints:
 - `scripts/change-focus.py`
 
 The scripts are designed for a real user context where `zellij action ...` works.
+
+Install:
+
+```bash
+./install.sh
+```

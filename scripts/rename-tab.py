@@ -22,8 +22,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         epilog=(
             "Examples:\n"
             "  rename-tab.py --name scratch\n"
-            "  rename-tab.py --session friendly-zebra --tab openclaw-probe --name openclaw-scratch\n"
-            "  rename-tab.py --session friendly-zebra --tab test --name monitor"
+            "  rename-tab.py --session my-session --tab old-name --name scratch\n"
+            "  rename-tab.py --session my-session --tab work --name monitor"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

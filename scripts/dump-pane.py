@@ -30,9 +30,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
         epilog=(
             "Examples:\n"
-            "  dump-pane.py --session friendly-zebra --tab test --lines 80\n"
-            "  dump-pane.py --session friendly-zebra --tab test --pane-id 2 --lines 80\n"
-            "  dump-pane.py --session friendly-zebra --tab test --title-query btop --full"
+            "  dump-pane.py --session my-session --tab work --lines 80\n"
+            "  dump-pane.py --session my-session --tab work --pane-id 2 --lines 80\n"
+            "  dump-pane.py --session my-session --tab work --title-query htop --full"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

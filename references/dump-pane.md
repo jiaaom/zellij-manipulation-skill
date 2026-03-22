@@ -37,37 +37,37 @@ So the script is intended for the approved, non-interactive execution path outsi
 Basic:
 
 ```bash
-python3 {baseDir}/scripts/dump-pane.py --session friendly-zebra --pane-id 2
+python3 {baseDir}/scripts/dump-pane.py --session my-session --pane-id 2
 ```
 
 Target a tab explicitly:
 
 ```bash
-python3 {baseDir}/scripts/dump-pane.py --session friendly-zebra --tab test
+python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work
 ```
 
 Target a specific pane inside a tab:
 
 ```bash
-python3 {baseDir}/scripts/dump-pane.py --session friendly-zebra --tab test --pane-id 2
+python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work --pane-id 2
 ```
 
 Limit output:
 
 ```bash
-python3 {baseDir}/scripts/dump-pane.py --session friendly-zebra --tab test --pane-id 2 --lines 80
+python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work --pane-id 2 --lines 80
 ```
 
 Dump full scrollback:
 
 ```bash
-python3 {baseDir}/scripts/dump-pane.py --session friendly-zebra --tab test --pane-id 2 --full
+python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work --pane-id 2 --full
 ```
 
 Resolve by title:
 
 ```bash
-python3 {baseDir}/scripts/dump-pane.py --session friendly-zebra --tab test --title-query btop
+python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work --title-query htop
 ```
 
 ## Arguments
@@ -83,7 +83,7 @@ python3 {baseDir}/scripts/dump-pane.py --session friendly-zebra --tab test --tit
 ## Matching rules
 
 - If `--pane-id 2` is used, the script interprets it as `terminal_2` unless `--kind plugin` is set.
-- If `--tab test` matches a single terminal pane, the script can dump it without a pane title or pane id.
+- If `--tab work` matches a single terminal pane, the script can dump it without a pane title or pane id.
 - If a tab contains multiple terminal panes, `--pane-id` is required. The script will refuse to guess.
 - If `--tab` is provided, the script requires exactly one matching tab.
 - If multiple panes match, the script prefers the focused one. Otherwise it fails rather than guessing.
@@ -96,7 +96,7 @@ For TUIs such as `btop`, `lazygit`, or editors:
 - the result is usually the current rendered screen
 - it should be treated as a screen snapshot, not as structured program state
 
-This was verified against `btop` in the `test` tab of session `friendly-zebra`.
+This was verified against a full-screen TUI in a dedicated work tab.
 
 ## Focus restoration
 
@@ -104,8 +104,8 @@ The script records the origin pane before switching away and attempts to restore
 
 Observed behavior during validation:
 
-- dumping `friendly-zebra / test / terminal_2` succeeded
-- focus returned to `terminal_1` (`codex`) afterward
+- dumping a target terminal pane succeeded
+- focus returned to the origin pane afterward
 
 If restoration fails, the dump may still succeed, but the operator should assume focus may have moved.
 

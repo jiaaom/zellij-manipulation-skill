@@ -36,11 +36,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         description="Send text, bytes, or a control key to a specific zellij pane.",
         epilog=(
             "Examples:\n"
-            "  send-keys.py --tab test --pane-id 2 --text 'btop'\n"
-            "  send-keys.py --tab test --pane-id 2 --control enter\n"
-            "  send-keys.py --tab test --pane-id 2 --control ctrl-c\n"
-            "  send-keys.py --tab test --pane-id 2 --control up\n"
-            "  send-keys.py --tab test --pane-id 2 --bytes 98 116 111 112 10"
+            "  send-keys.py --tab work --pane-id 2 --text 'htop'\n"
+            "  send-keys.py --tab work --pane-id 2 --control enter\n"
+            "  send-keys.py --tab work --pane-id 2 --control ctrl-c\n"
+            "  send-keys.py --tab work --pane-id 2 --control up\n"
+            "  send-keys.py --tab work --pane-id 2 --bytes 104 116 111 112 10"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
