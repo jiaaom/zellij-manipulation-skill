@@ -25,13 +25,14 @@ For the Python helpers, `--session` is optional:
 Find the session:
 
 ```bash
-{baseDir}/scripts/find-current-session.sh
+python3 {baseDir}/scripts/find-current-session.py
 ```
 
 List tabs and panes:
 
 ```bash
 python3 {baseDir}/scripts/find-panes.py [--session session]
+python3 {baseDir}/scripts/find-sessions.py [-q pattern]
 ```
 
 ## Targeting
