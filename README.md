@@ -1,5 +1,7 @@
 # Zellij Manipulation Skill
 
+> Work together with an agent in Zellij!
+
 Minimal OpenClaw/Codex skill for working with an existing local Zellij session.
 
 It includes helpers to:
@@ -10,7 +12,16 @@ It includes helpers to:
 - run commands in a pane
 - create, rename, and focus tabs
 
-Core entrypoints:
+
+## Install:
+
+
+```bash
+git clone git@github.com:jiaaom/zellij-manipulation-skill.git && cd zellij-manipulation-skill
+./install.sh
+```
+
+## Core entrypoints:
 
 - `SKILL.md`
 - `scripts/dump-pane.py`
@@ -21,9 +32,3 @@ Core entrypoints:
 - `scripts/change-focus.py`
 
 The scripts are designed for a real user context where `zellij action ...` works.
-
-Install:
-
-```bash
-./install.sh
-```
