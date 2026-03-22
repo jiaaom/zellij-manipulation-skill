@@ -1,5 +1,5 @@
 ---
-name: zellij
+name: Zellij-Manipulation
 description: Inspect and control an existing local zellij session from OpenClaw. Use for reading panes, sending keys, running commands in panes, and managing tabs without using attach.
 homepage: https://zellij.dev
 metadata: {"moltbot":{"emoji":"🪟","os":["darwin","linux"],"requires":{"bins":["zellij","python3"]},"install":[{"id":"brew","kind":"brew","formula":"zellij","bins":["zellij"],"label":"Install Zellij (brew)"},{"id":"cargo","kind":"cargo","crate":"zellij","bins":["zellij"],"label":"Install Zellij (Cargo)"}]}}
