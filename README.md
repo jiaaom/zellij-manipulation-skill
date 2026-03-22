@@ -4,6 +4,11 @@
 
 Minimal OpenClaw/Codex skill for working with an existing local Zellij session.
 
+Tested with:
+
+- OpenClaw `2026.3.13` (`61d171a`)
+- Zellij `0.43.1`
+
 It includes helpers to:
 
 - inspect tabs and panes
