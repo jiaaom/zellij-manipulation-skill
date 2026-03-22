@@ -23,6 +23,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         description="Run a shell command in a specific zellij pane by sending text followed by Enter.",
         epilog=(
             "Examples:\n"
+            "  run-in-pane.py --tab scratch -- pwd\n"
             "  run-in-pane.py --tab work --pane-id 2 -- command\n"
             "  run-in-pane.py --tab work --pane-id 2 -- htop\n"
             "  run-in-pane.py --tab work --pane-id 5 -- ls -la"
@@ -35,7 +36,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="optional zellij session name; otherwise uses the current session or the only live session",
     )
     parser.add_argument("-t", "--tab", required=True, help="tab name filter (case-insensitive substring)")
-    parser.add_argument("-p", "--pane-id", required=True, help="target pane id, eg. 2 or terminal_2")
+    parser.add_argument("-p", "--pane-id", help="optional target pane id, eg. 2 or terminal_2")
     parser.add_argument("-q", "--title-query", help="optional pane title filter")
     parser.add_argument(
         "--no-restore",
