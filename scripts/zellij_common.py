@@ -308,6 +308,28 @@ def format_tab_summary(metadata: SessionMetadata) -> list[str]:
     return lines
 
 
+def _tab_summary_block(metadata: SessionMetadata) -> str:
+    lines = format_tab_summary(metadata)
+    if not lines:
+        return "Available tabs:\n  - none"
+    return "Available tabs:\n" + "\n".join(lines)
+
+
+def _pane_summary_block(
+    metadata: SessionMetadata, panes: list[PaneInfo], *, kind: str
+) -> str:
+    if not panes:
+        return f"Available {kind} panes:\n  - none"
+    lines: list[str] = []
+    for pane in panes:
+        tab = metadata.tabs_by_position.get(pane.tab_position)
+        tab_name = tab.name if tab else str(pane.tab_position)
+        lines.append(
+            f"  - {pane.normalized_id} tab={tab_name} title={pane.title!r} focused={pane.focused}"
+        )
+    return f"Available {kind} panes:\n" + "\n".join(lines)
+
+
 def unique_tab_position(metadata: SessionMetadata, query: str | None) -> int | None:
     if not query:
         return None
@@ -318,11 +340,14 @@ def unique_tab_position(metadata: SessionMetadata, query: str | None) -> int | N
         if lowered in tab.name.lower()
     ]
     if not matches:
-        fail(f"No tab matched query '{query}'")
+        fail(f"No tab matched query '{query}'.\n{_tab_summary_block(metadata)}")
     unique = sorted(set(matches))
     if len(unique) != 1:
         names = [metadata.tabs_by_position[pos].name for pos in unique]
-        fail(f"Tab query '{query}' matched multiple tabs: {', '.join(names)}")
+        fail(
+            f"Tab query '{query}' matched multiple tabs: {', '.join(names)}\n"
+            f"{_tab_summary_block(metadata)}"
+        )
     return unique[0]
 
 
@@ -333,7 +358,10 @@ def normalize_target_id(raw: str | None, kind: str) -> str | None:
         return raw
     if raw.isdigit():
         return f"{kind}_{raw}"
-    fail(f"Unsupported pane id '{raw}'. Use eg. 2 or terminal_2.")
+    fail(
+        f"Unsupported pane id '{raw}'. Re-run find-panes.py and use a real pane id such as terminal_20.\n"
+        f"Bare integers are only shorthand for the discovered id, eg. 20 -> terminal_20."
+    )
 
 
 def select_target_pane(
@@ -349,7 +377,8 @@ def select_target_pane(
     target_id = normalize_target_id(pane_id, kind)
     lowered_title_query = title_query.lower() if title_query else None
 
-    candidates = [pane for pane in metadata.panes if pane.kind == kind]
+    all_kind_panes = [pane for pane in metadata.panes if pane.kind == kind]
+    candidates = list(all_kind_panes)
 
     if require_pane_id_for_multi and tab_position is not None and target_id is None:
         tab_candidates = [
@@ -370,6 +399,7 @@ def select_target_pane(
 
     if tab_position is not None:
         candidates = [pane for pane in candidates if pane.tab_position == tab_position]
+    scoped_candidates = list(candidates)
     if target_id is not None:
         candidates = [pane for pane in candidates if pane.normalized_id == target_id]
     if lowered_title_query:
@@ -377,10 +407,31 @@ def select_target_pane(
             pane for pane in candidates if lowered_title_query in pane.title.lower()
         ]
 
-    if not candidates and target_id is not None and tab_position is None:
-        fail(f"No {kind} pane matched '{target_id}'")
+    if not candidates and target_id is not None:
+        lines = [f"No {kind} pane matched '{target_id}'."]
+        if tab_query is not None:
+            lines.append(
+                f"The tab filter '{tab_query}' resolved successfully, but that pane id is not present there."
+            )
+            lines.append(_pane_summary_block(metadata, scoped_candidates, kind=kind))
+        else:
+            lines.append(_pane_summary_block(metadata, all_kind_panes, kind=kind))
+        fail("\n".join(lines))
     if not candidates:
-        fail("No panes matched the requested filters")
+        lines = ["No panes matched the requested filters."]
+        if tab_query is not None:
+            tab = (
+                metadata.tabs_by_position.get(tab_position)
+                if tab_position is not None
+                else None
+            )
+            tab_name = tab.name if tab else tab_query
+            lines.append(f"The resolved tab was '{tab_name}'.")
+            lines.append(_pane_summary_block(metadata, scoped_candidates, kind=kind))
+        else:
+            lines.append(_tab_summary_block(metadata))
+            lines.append(_pane_summary_block(metadata, all_kind_panes, kind=kind))
+        fail("\n".join(lines))
     if len(candidates) == 1:
         return candidates[0]
 
