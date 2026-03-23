@@ -80,7 +80,7 @@ python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work --title-q
 
 ## Arguments
 
-- `--session`: optional target zellij session; when omitted the script uses the current session, or the only live session, and otherwise fails. Detached live sessions are handled automatically; `EXITED - attach to resurrect` sessions are still unsupported.
+- `--session`: optional target zellij session; when omitted the script uses the only discovered session, and otherwise prints all discovered session names and fails. Detached live sessions are handled automatically; `EXITED - attach to resurrect` sessions are still unsupported.
 - `--pane-id`: target pane id, eg. `2` or `terminal_2`
 - `--kind`: `terminal` or `plugin`; default is `terminal`
 - `--tab`: case-insensitive tab-name filter; preferred when tab names are stable

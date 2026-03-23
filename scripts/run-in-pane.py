@@ -33,7 +33,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-s",
         "--session",
-        help="optional zellij session name; otherwise uses the current session or the only live session",
+        help="optional zellij session name; otherwise uses the only discovered session and fails if multiple sessions exist",
     )
     parser.add_argument(
         "-t",

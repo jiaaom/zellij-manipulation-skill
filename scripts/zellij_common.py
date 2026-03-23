@@ -141,9 +141,8 @@ def zellij_action_cmd(session: str | None, *action_args: str) -> list[str]:
 def find_current_session() -> str:
     # Session resolution policy for all Python zellij helpers:
     # 1. if ZELLIJ_SESSION_NAME is present, use it
-    # 2. otherwise, if zellij marks one session as "(current)", use it
-    # 3. otherwise, if exactly one live non-exited session exists, use it
-    # 4. otherwise, fail and require the caller to pass --session explicitly
+    # 2. otherwise, if exactly one discovered session exists, use it
+    # 3. otherwise, print all discovered sessions and require --session explicitly
     if os.environ.get("ZELLIJ_SESSION_NAME"):
         return os.environ["ZELLIJ_SESSION_NAME"]
 
@@ -154,25 +153,18 @@ def find_current_session() -> str:
     parsed: list[tuple[str, str]] = []
     for line in raw:
         name = re.sub(r" \[Created.*", "", line).strip()
-        if "(current)" in line:
-            status = "current"
-        elif "(EXITED" in line:
+        if "(EXITED" in line:
             status = "exited"
         else:
             status = "active"
         parsed.append((name, status))
 
-    for name, status in parsed:
-        if status == "current":
-            return name
-
-    live = [name for name, status in parsed if status == "active"]
-    if len(live) == 1:
-        return live[0]
+    if len(parsed) == 1:
+        return parsed[0][0]
 
     fail(
-        "Could not determine a unique current zellij session.\n"
-        + "\n".join(f"  - {name} ({status})" for name, status in parsed)
+        "Multiple zellij sessions found. Pass --session explicitly.\n"
+        + "\n".join(f"  - {name}" for name, _ in parsed)
     )
 
 

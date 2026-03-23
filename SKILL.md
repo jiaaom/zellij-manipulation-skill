@@ -16,9 +16,8 @@ Do not call `zellij attach` manually from an agent. Use the Python helpers inste
 For the Python helpers, `--session` is optional:
 
 - use `--session` if you know the target
-- otherwise use the current session
-- otherwise use the only live session
-- otherwise fail and require `--session`
+- otherwise use the only discovered session
+- otherwise print all discovered session names and require `--session`
 
 The helper scripts use the same CLI for both attached and detached live sessions.
 
