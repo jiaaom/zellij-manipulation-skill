@@ -45,13 +45,18 @@ The scripts are designed for a real user context where `zellij action ...` works
 - live detached sessions are supported automatically through the Python helpers
 - callers should keep using the normal script entrypoints; there is no separate `--detached` mode
 - the hidden helper uses a default PTY size of `120x40`, which is large enough for common TUIs like `btop`
+- the helper waits until zellij reports a real attached client before action commands continue, which avoids early `go-to-tab-name` / `dump-screen` races after auto-attach
+- action helpers retry short-lived attach races by default before surfacing a failure
 - the helper can be tuned with environment variables:
   - `OPENCLAW_ZELLIJ_HELPER_COLS`
   - `OPENCLAW_ZELLIJ_HELPER_ROWS`
   - `OPENCLAW_ZELLIJ_HELPER_TTL_SECONDS`
   - `OPENCLAW_ZELLIJ_HELPER_READY_SETTLE_SECONDS`
+  - `OPENCLAW_ZELLIJ_HELPER_READY_POLL_SECONDS`
   - `OPENCLAW_ZELLIJ_LIST_CLIENTS_RETRY_SECONDS`
   - `OPENCLAW_ZELLIJ_LIST_CLIENTS_POLL_SECONDS`
+  - `OPENCLAW_ZELLIJ_ACTION_RETRY_ATTEMPTS`
+  - `OPENCLAW_ZELLIJ_ACTION_RETRY_SLEEP_SECONDS`
 
 Current limitation:
 

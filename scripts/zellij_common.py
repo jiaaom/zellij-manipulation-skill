@@ -72,18 +72,61 @@ def run_zellij_action(
     timeout_seconds: float | None = None,
     ensure_actionable: bool = True,
 ) -> subprocess.CompletedProcess[str]:
-    if ensure_actionable:
-        try:
-            ensure_hidden_attach(session)
-        except HiddenAttachError as error:
-            fail(str(error))
-    result = run(
-        zellij_action_cmd(session, *action_args),
-        timeout_seconds=timeout_seconds,
+    attempts = max(
+        1, int(os.environ.get("OPENCLAW_ZELLIJ_ACTION_RETRY_ATTEMPTS", "3"))
     )
-    if ensure_actionable:
-        touch_hidden_attach(session)
-    return result
+    retry_sleep_seconds = float(
+        os.environ.get("OPENCLAW_ZELLIJ_ACTION_RETRY_SLEEP_SECONDS", "0.5")
+    )
+    cmd = zellij_action_cmd(session, *action_args)
+    last_error: str | None = None
+
+    for attempt in range(1, attempts + 1):
+        if ensure_actionable:
+            try:
+                ensure_hidden_attach(session)
+            except HiddenAttachError as error:
+                last_error = str(error)
+                if attempt >= attempts:
+                    fail(last_error)
+                time.sleep(retry_sleep_seconds)
+                continue
+        try:
+            result = subprocess.run(
+                cmd,
+                check=True,
+                text=True,
+                capture_output=True,
+                timeout=timeout_seconds,
+            )
+        except subprocess.TimeoutExpired:
+            last_error = f"Timed out after {timeout_seconds}s: {' '.join(cmd)}"
+            should_retry = True
+        except subprocess.CalledProcessError as error:
+            stderr = (error.stderr or "").strip()
+            stdout = (error.stdout or "").strip()
+            details = stderr or stdout or f"exit status {error.returncode}"
+            last_error = f"{' '.join(cmd)} failed: {details}"
+            lowered_details = details.lower()
+            should_retry = ensure_actionable and any(
+                needle in lowered_details
+                for needle in (
+                    "there is no active session",
+                    "no active session",
+                    "not connected",
+                    "timed out",
+                )
+            )
+        else:
+            if ensure_actionable:
+                touch_hidden_attach(session)
+            return result
+
+        if attempt >= attempts or not should_retry:
+            fail(last_error or f"Failed to run: {' '.join(cmd)}")
+        time.sleep(retry_sleep_seconds)
+
+    fail(last_error or f"Failed to run: {' '.join(cmd)}")
 
 
 def zellij_action_cmd(session: str | None, *action_args: str) -> list[str]:

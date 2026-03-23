@@ -19,6 +19,7 @@ DEFAULT_START_TIMEOUT_SECONDS = 5.0
 DEFAULT_PTY_COLS = 120
 DEFAULT_PTY_ROWS = 40
 DEFAULT_READY_SETTLE_SECONDS = 0.5
+DEFAULT_READY_POLL_SECONDS = 0.1
 LOCK_POLL_SECONDS = 0.1
 
 
@@ -328,10 +329,19 @@ def ensure_hidden_attach(session: str) -> None:
                 DEFAULT_READY_SETTLE_SECONDS,
             )
         )
+        ready_poll_seconds = float(
+            os.environ.get(
+                "OPENCLAW_ZELLIJ_HELPER_READY_POLL_SECONDS",
+                DEFAULT_READY_POLL_SECONDS,
+            )
+        )
         while time.time() < deadline:
+            if not _pid_is_alive(helper_pid):
+                _clear_state(session)
+                break
             if (
-                _pid_is_alive(helper_pid)
-                and time.time() - started_at >= ready_settle_seconds
+                time.time() - started_at >= ready_settle_seconds
+                and session_has_attached_client(session)
             ):
                 now = time.time()
                 _write_state(
@@ -347,10 +357,7 @@ def ensure_hidden_attach(session: str) -> None:
                     )
                 )
                 return
-            if not _pid_is_alive(helper_pid):
-                _clear_state(session)
-                break
-            time.sleep(0.1)
+            time.sleep(ready_poll_seconds)
 
         _terminate_process(helper_pid)
         _clear_state(session)
