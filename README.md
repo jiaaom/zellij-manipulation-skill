@@ -37,3 +37,9 @@ git clone git@github.com:jiaaom/zellij-manipulation-skill.git && cd zellij-manip
 - `scripts/change-focus.py`
 
 The scripts are designed for a real user context where `zellij action ...` works.
+
+Current limitation:
+
+- the target zellij session must be live/attached
+- detached sessions in `EXITED - attach to resurrect` state are not supported by the current action-based helpers
+- `dump-pane.py` includes a timeout so these failures return quickly instead of hanging

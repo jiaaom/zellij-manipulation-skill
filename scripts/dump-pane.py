@@ -139,7 +139,7 @@ def main() -> None:
         require_pane_id_for_multi=True,
     )
 
-    origin_id = current_pane_id(session)
+    origin_id = current_pane_id(session, timeout_seconds=args.timeout_seconds)
     try:
         if origin_id != target.normalized_id:
             from zellij_common import focus_pane

@@ -112,6 +112,8 @@ python3 {baseDir}/scripts/change-focus.py --tab work --pane-id 2
 
 ## Caveats
 
+- These helpers currently assume the target session is live/attached.
+- Detached sessions in `EXITED - attach to resurrect` state are not supported by the current action-based approach.
 - These helpers work by focusing the target pane, acting, then restoring focus.
 - They read screen/scrollback, not structured application state.
 - `dump-pane.py` is useful for TUIs like `btop`, but treat the result as a screen snapshot.
