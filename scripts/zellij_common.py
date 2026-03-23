@@ -4,8 +4,16 @@ import os
 import re
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import NoReturn
+
+from zellij_hidden_attach import (
+    HiddenAttachError,
+    ensure_hidden_attach,
+    touch_hidden_attach,
+)
 
 
 @dataclass(frozen=True)
@@ -32,9 +40,10 @@ class PaneInfo:
 class SessionMetadata:
     tabs_by_position: dict[int, TabInfo]
     panes: list[PaneInfo]
+    connected_clients: int | None = None
 
 
-def fail(message: str) -> "NoReturn":
+def fail(message: str) -> NoReturn:
     print(message, file=sys.stderr)
     raise SystemExit(1)
 
@@ -55,6 +64,26 @@ def run(
         )
     except subprocess.TimeoutExpired:
         fail(f"Timed out after {timeout_seconds}s: {' '.join(args)}")
+
+
+def run_zellij_action(
+    session: str,
+    *action_args: str,
+    timeout_seconds: float | None = None,
+    ensure_actionable: bool = True,
+) -> subprocess.CompletedProcess[str]:
+    if ensure_actionable:
+        try:
+            ensure_hidden_attach(session)
+        except HiddenAttachError as error:
+            fail(str(error))
+    result = run(
+        zellij_action_cmd(session, *action_args),
+        timeout_seconds=timeout_seconds,
+    )
+    if ensure_actionable:
+        touch_hidden_attach(session)
+    return result
 
 
 def zellij_action_cmd(session: str | None, *action_args: str) -> list[str]:
@@ -109,6 +138,7 @@ def find_session_metadata_file(session: str) -> Path:
     # Match zellij's per-version cache layout on macOS and Linux.
     candidates = [
         os.environ.get("OPENCLAW_ZELLIJ_SESSION_INFO_DIR"),
+        f"{Path.home()}/Library/Caches/org.Zellij-Contributors.Zellij/{version}/session_info",
         f"{Path.home()}/Library/Caches/org.Zellij-Contributors.zellij/{version}/session_info",
         f"{os.environ.get('XDG_CACHE_HOME', str(Path.home() / '.cache'))}/zellij/{version}/session_info",
     ]
@@ -126,6 +156,7 @@ def find_session_metadata_file(session: str) -> Path:
 def parse_metadata(path: Path) -> SessionMetadata:
     tabs_by_position: dict[int, TabInfo] = {}
     panes: list[PaneInfo] = []
+    connected_clients: int | None = None
 
     section: str | None = None
     item: str | None = None
@@ -163,7 +194,9 @@ def parse_metadata(path: Path) -> SessionMetadata:
                 panes.append(
                     PaneInfo(
                         pane_id=int(current["id"]),
-                        kind="plugin" if current.get("is_plugin") == "true" else "terminal",
+                        kind="plugin"
+                        if current.get("is_plugin") == "true"
+                        else "terminal",
                         title=current.get("title", ""),
                         focused=current.get("is_focused") == "true",
                         tab_position=int(current["tab_position"]),
@@ -177,6 +210,12 @@ def parse_metadata(path: Path) -> SessionMetadata:
                 continue
 
         if item is None or not line:
+            if line.startswith("connected_clients "):
+                _, _, raw_value = line.partition(" ")
+                try:
+                    connected_clients = int(raw_value)
+                except ValueError:
+                    connected_clients = None
             continue
 
         key, _, value = line.partition(" ")
@@ -185,16 +224,51 @@ def parse_metadata(path: Path) -> SessionMetadata:
             value = value[1:-1]
         current[key] = value
 
-    return SessionMetadata(tabs_by_position=tabs_by_position, panes=panes)
+    return SessionMetadata(
+        tabs_by_position=tabs_by_position,
+        panes=panes,
+        connected_clients=connected_clients,
+    )
+
+
+def load_session_metadata(session: str) -> SessionMetadata:
+    try:
+        return parse_metadata(find_session_metadata_file(session))
+    except SystemExit:
+        try:
+            ensure_hidden_attach(session)
+        except HiddenAttachError as error:
+            fail(str(error))
+        touch_hidden_attach(session)
+        return parse_metadata(find_session_metadata_file(session))
 
 
 def current_pane_id(session: str, *, timeout_seconds: float | None = None) -> str:
-    result = run(
-        zellij_action_cmd(session, "list-clients"),
-        timeout_seconds=timeout_seconds,
-    ).stdout.strip().splitlines()
-    if not result:
-        fail("zellij action list-clients returned no output")
+    retry_seconds = float(
+        os.environ.get("OPENCLAW_ZELLIJ_LIST_CLIENTS_RETRY_SECONDS", "2.0")
+    )
+    poll_seconds = float(
+        os.environ.get("OPENCLAW_ZELLIJ_LIST_CLIENTS_POLL_SECONDS", "0.1")
+    )
+    deadline = time.time() + retry_seconds
+
+    result: list[str] = []
+    while True:
+        result = (
+            run_zellij_action(
+                session,
+                "list-clients",
+                timeout_seconds=timeout_seconds,
+            )
+            .stdout.strip()
+            .splitlines()
+        )
+        if result:
+            break
+        if time.time() >= deadline:
+            fail("zellij action list-clients returned no output")
+        time.sleep(poll_seconds)
+
     last = result[-1].split()
     if len(last) < 2:
         fail("Could not parse current pane from zellij action list-clients")
@@ -278,7 +352,9 @@ def select_target_pane(
     candidates = [pane for pane in metadata.panes if pane.kind == kind]
 
     if require_pane_id_for_multi and tab_position is not None and target_id is None:
-        tab_candidates = [pane for pane in candidates if pane.tab_position == tab_position]
+        tab_candidates = [
+            pane for pane in candidates if pane.tab_position == tab_position
+        ]
         if len(tab_candidates) > 1:
             tab = metadata.tabs_by_position.get(tab_position)
             tab_name = tab.name if tab else str(tab_position)
@@ -297,7 +373,9 @@ def select_target_pane(
     if target_id is not None:
         candidates = [pane for pane in candidates if pane.normalized_id == target_id]
     if lowered_title_query:
-        candidates = [pane for pane in candidates if lowered_title_query in pane.title.lower()]
+        candidates = [
+            pane for pane in candidates if lowered_title_query in pane.title.lower()
+        ]
 
     if not candidates and target_id is not None and tab_position is None:
         fail(f"No {kind} pane matched '{target_id}'")
@@ -330,8 +408,10 @@ def focus_pane(
     if target_tab is None:
         fail(f"Could not resolve tab for target pane {target.normalized_id}")
 
-    run(
-        zellij_action_cmd(session, "go-to-tab-name", target_tab.name),
+    run_zellij_action(
+        session,
+        "go-to-tab-name",
+        target_tab.name,
         timeout_seconds=timeout_seconds,
     )
 
@@ -352,12 +432,15 @@ def focus_pane(
             first_seen = current
         elif current == first_seen:
             break
-        run(
-            zellij_action_cmd(session, "focus-next-pane"),
+        run_zellij_action(
+            session,
+            "focus-next-pane",
             timeout_seconds=timeout_seconds,
         )
 
-    fail(f"Could not focus target pane {target.normalized_id} in tab '{target_tab.name}'")
+    fail(
+        f"Could not focus target pane {target.normalized_id} in tab '{target_tab.name}'"
+    )
 
 
 def restore_origin(
