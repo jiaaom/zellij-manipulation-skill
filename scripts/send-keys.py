@@ -37,11 +37,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         epilog=(
             "Examples:\n"
             "  send-keys.py --tab scratch --text 'echo hello'\n"
-            "  send-keys.py --tab work --pane-id 2 --text 'htop'\n"
-            "  send-keys.py --tab work --pane-id 2 --control enter\n"
-            "  send-keys.py --tab work --pane-id 2 --control ctrl-c\n"
-            "  send-keys.py --tab work --pane-id 2 --control up\n"
-            "  send-keys.py --tab work --pane-id 2 --bytes 104 116 111 112 10"
+            "  send-keys.py --tab work --pane-id terminal_20 --text 'htop'\n"
+            "  send-keys.py --tab work --pane-id terminal_20 --control enter\n"
+            "  send-keys.py --tab work --pane-id terminal_20 --control ctrl-c\n"
+            "  send-keys.py --tab work --pane-id terminal_20 --control up\n"
+            "  send-keys.py --tab work --pane-id terminal_20 --bytes 104 116 111 112 10"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -57,7 +57,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="tab name filter (case-insensitive substring)",
     )
     parser.add_argument(
-        "-p", "--pane-id", help="optional target pane id, eg. 2 or terminal_2"
+        "-p",
+        "--pane-id",
+        help="optional target pane id returned by find-panes.py, eg. terminal_20 or 20",
     )
     parser.add_argument("-q", "--title-query", help="optional pane title filter")
     parser.add_argument("--text", help="plain text to send")

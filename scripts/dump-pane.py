@@ -31,7 +31,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         epilog=(
             "Examples:\n"
             "  dump-pane.py --session my-session --tab work --lines 80\n"
-            "  dump-pane.py --session my-session --tab work --pane-id 2 --lines 80\n"
+            "  dump-pane.py --session my-session --tab work --pane-id terminal_20 --lines 80\n"
             "  dump-pane.py --session my-session --tab work --title-query htop --full"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -41,7 +41,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--session",
         help="optional zellij session name; otherwise uses the current session or the only live session",
     )
-    parser.add_argument("-p", "--pane-id", help="target pane id, eg. 2 or terminal_2")
+    parser.add_argument(
+        "-p",
+        "--pane-id",
+        help="target pane id returned by find-panes.py, eg. terminal_20 or 20",
+    )
     parser.add_argument(
         "-k",
         "--kind",

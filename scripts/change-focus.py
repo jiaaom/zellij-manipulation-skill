@@ -25,7 +25,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         epilog=(
             "Examples:\n"
             "  change-focus.py --tab work\n"
-            "  change-focus.py --tab work --pane-id 2\n"
+            "  change-focus.py --tab work --pane-id terminal_20\n"
             "  change-focus.py --tab scratch\n"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -41,7 +41,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         required=True,
         help="tab name filter (case-insensitive substring)",
     )
-    parser.add_argument("-p", "--pane-id", help="optional pane id, eg. 2 or terminal_2")
+    parser.add_argument(
+        "-p",
+        "--pane-id",
+        help="optional pane id returned by find-panes.py, eg. terminal_20 or 20",
+    )
     parser.add_argument("-q", "--title-query", help="optional pane title filter")
     return parser
 
