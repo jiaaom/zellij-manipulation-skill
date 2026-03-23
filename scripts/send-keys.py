@@ -8,14 +8,14 @@ from zellij_common import (
     current_pane_id,
     fail,
     find_current_session,
-    find_session_metadata_file,
     format_terminal_pane_summary,
     list_terminal_panes,
+    load_session_metadata,
+    find_session_metadata_file,
     parse_metadata,
     restore_origin,
-    run,
+    run_zellij_action,
     select_target_pane,
-    zellij_action_cmd,
 )
 
 
@@ -56,7 +56,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
         required=True,
         help="tab name filter (case-insensitive substring)",
     )
-    parser.add_argument("-p", "--pane-id", help="optional target pane id, eg. 2 or terminal_2")
+    parser.add_argument(
+        "-p", "--pane-id", help="optional target pane id, eg. 2 or terminal_2"
+    )
     parser.add_argument("-q", "--title-query", help="optional pane title filter")
     parser.add_argument("--text", help="plain text to send")
     parser.add_argument(
@@ -117,7 +119,7 @@ def main() -> None:
     args = parse_args()
 
     session = args.session or find_current_session()
-    metadata = parse_metadata(find_session_metadata_file(session))
+    metadata = load_session_metadata(session)
     target = select_target_pane(
         metadata,
         kind="terminal",
@@ -135,9 +137,11 @@ def main() -> None:
 
             focus_pane(session, metadata, target)
         if payload_type == "text":
-            run(zellij_action_cmd(session, "write-chars", payload))
+            text_payload = str(payload)
+            run_zellij_action(session, "write-chars", text_payload)
         else:
-            run(zellij_action_cmd(session, "write", *[str(b) for b in payload]))
+            byte_payload = [str(b) for b in list(payload)]
+            run_zellij_action(session, "write", *byte_payload)
     finally:
         if not args.no_restore and origin_id != target.normalized_id:
             restore_origin(session, metadata, origin_id)
@@ -145,7 +149,9 @@ def main() -> None:
     if payload_type == "text":
         print(f"Sent text to {target.normalized_id} in tab '{args.tab}': {payload!r}")
     else:
-        print(f"Sent bytes to {target.normalized_id} in tab '{args.tab}': {' '.join(str(b) for b in payload)}")
+        print(
+            f"Sent bytes to {target.normalized_id} in tab '{args.tab}': {' '.join(str(b) for b in payload)}"
+        )
 
 
 if __name__ == "__main__":

@@ -7,14 +7,14 @@ import sys
 from zellij_common import (
     current_pane_id,
     find_current_session,
-    find_session_metadata_file,
     format_terminal_pane_summary,
     list_terminal_panes,
+    load_session_metadata,
+    find_session_metadata_file,
     parse_metadata,
     restore_origin,
-    run,
+    run_zellij_action,
     select_target_pane,
-    zellij_action_cmd,
 )
 
 
@@ -35,15 +35,24 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--session",
         help="optional zellij session name; otherwise uses the current session or the only live session",
     )
-    parser.add_argument("-t", "--tab", required=True, help="tab name filter (case-insensitive substring)")
-    parser.add_argument("-p", "--pane-id", help="optional target pane id, eg. 2 or terminal_2")
+    parser.add_argument(
+        "-t",
+        "--tab",
+        required=True,
+        help="tab name filter (case-insensitive substring)",
+    )
+    parser.add_argument(
+        "-p", "--pane-id", help="optional target pane id, eg. 2 or terminal_2"
+    )
     parser.add_argument("-q", "--title-query", help="optional pane title filter")
     parser.add_argument(
         "--no-restore",
         action="store_true",
         help="leave focus on the target pane instead of restoring the origin pane",
     )
-    parser.add_argument("command", nargs=argparse.REMAINDER, help="command to run after --")
+    parser.add_argument(
+        "command", nargs=argparse.REMAINDER, help="command to run after --"
+    )
     return parser
 
 
@@ -72,7 +81,9 @@ def normalized_command(parts: list[str]) -> str:
     if parts and parts[0] == "--":
         parts = parts[1:]
     if not parts:
-        raise SystemExit("No command provided. Pass it after --, eg. run-in-pane.py --tab work --pane-id 2 -- htop")
+        raise SystemExit(
+            "No command provided. Pass it after --, eg. run-in-pane.py --tab work --pane-id 2 -- htop"
+        )
     return " ".join(parts)
 
 
@@ -82,7 +93,7 @@ def main() -> None:
     args = parse_args()
 
     session = args.session or find_current_session()
-    metadata = parse_metadata(find_session_metadata_file(session))
+    metadata = load_session_metadata(session)
     target = select_target_pane(
         metadata,
         kind="terminal",
@@ -99,8 +110,8 @@ def main() -> None:
             from zellij_common import focus_pane
 
             focus_pane(session, metadata, target)
-        run(zellij_action_cmd(session, "write-chars", command))
-        run(zellij_action_cmd(session, "write", "10"))
+        run_zellij_action(session, "write-chars", command)
+        run_zellij_action(session, "write", "10")
     finally:
         if not args.no_restore and origin_id != target.normalized_id:
             restore_origin(session, metadata, origin_id)

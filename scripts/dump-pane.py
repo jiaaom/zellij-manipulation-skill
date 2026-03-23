@@ -11,14 +11,14 @@ from zellij_common import (
     current_pane_id,
     fail,
     find_current_session,
-    find_session_metadata_file,
     format_terminal_pane_summary,
     list_terminal_panes,
+    load_session_metadata,
+    find_session_metadata_file,
     parse_metadata,
     restore_origin,
-    run,
+    run_zellij_action,
     select_target_pane,
-    zellij_action_cmd,
 )
 
 
@@ -54,7 +54,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--tab",
         help="tab name filter (case-insensitive substring); recommended when tab names are stable",
     )
-    parser.add_argument("-q", "--title-query", help="pane title filter (case-insensitive substring)")
+    parser.add_argument(
+        "-q", "--title-query", help="pane title filter (case-insensitive substring)"
+    )
     parser.add_argument("--full", action="store_true", help="print full scrollback")
     parser.add_argument(
         "--lines",
@@ -96,8 +98,11 @@ def print_default_overview(parser: argparse.ArgumentParser) -> None:
 def dump_current_pane(session: str, timeout_seconds: float) -> str:
     dump_path = Path(tempfile.gettempdir()) / f"openclaw-zellij-dump-{os.getpid()}.txt"
     # --full is useful even for TUIs because it captures the current rendered screen buffer.
-    run(
-        zellij_action_cmd(session, "dump-screen", "--full", str(dump_path)),
+    run_zellij_action(
+        session,
+        "dump-screen",
+        "--full",
+        str(dump_path),
         timeout_seconds=timeout_seconds,
     )
     if not dump_path.exists():
@@ -116,7 +121,11 @@ def limit_lines(content: str, lines: int) -> str:
         return "\n".join(split_lines) + ("\n" if split_lines else "")
     omitted = len(split_lines) - lines
     tail = split_lines[-lines:]
-    return f"[... {omitted} lines omitted, showing last {lines} lines ...]\n\n" + "\n".join(tail) + "\n"
+    return (
+        f"[... {omitted} lines omitted, showing last {lines} lines ...]\n\n"
+        + "\n".join(tail)
+        + "\n"
+    )
 
 
 def main() -> None:
@@ -129,7 +138,7 @@ def main() -> None:
         fail("--timeout-seconds must be a positive number")
 
     session = args.session or find_current_session()
-    metadata = parse_metadata(find_session_metadata_file(session))
+    metadata = load_session_metadata(session)
     target = select_target_pane(
         metadata,
         kind=args.kind,
