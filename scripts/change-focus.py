@@ -7,15 +7,15 @@ import sys
 from zellij_common import (
     fail,
     find_current_session,
-    find_session_metadata_file,
     format_tab_summary,
     format_terminal_pane_summary,
     list_terminal_panes,
+    load_session_metadata,
+    find_session_metadata_file,
     parse_metadata,
-    run,
+    run_zellij_action,
     select_target_pane,
     unique_tab_position,
-    zellij_action_cmd,
 )
 
 
@@ -77,7 +77,7 @@ def main() -> None:
     args = parse_args()
 
     session = args.session or find_current_session()
-    metadata = parse_metadata(find_session_metadata_file(session))
+    metadata = load_session_metadata(session)
 
     if args.pane_id or args.title_query:
         target = select_target_pane(
@@ -95,8 +95,10 @@ def main() -> None:
         return
 
     tab_position = unique_tab_position(metadata, args.tab)
+    if tab_position is None:
+        fail(f"No tab matched query '{args.tab}'")
     tab = metadata.tabs_by_position[tab_position]
-    run(zellij_action_cmd(session, "go-to-tab-name", tab.name))
+    run_zellij_action(session, "go-to-tab-name", tab.name)
 
     print(f"Focused tab '{tab.name}'")
 

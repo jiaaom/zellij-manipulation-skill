@@ -7,12 +7,12 @@ import sys
 from zellij_common import (
     active_tab,
     find_current_session,
-    find_session_metadata_file,
     format_tab_summary,
+    load_session_metadata,
+    find_session_metadata_file,
     parse_metadata,
-    run,
+    run_zellij_action,
     unique_tab_position,
-    zellij_action_cmd,
 )
 
 
@@ -32,7 +32,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--session",
         help="optional zellij session name; otherwise uses the current session or the only live session",
     )
-    parser.add_argument("-t", "--tab", help="tab name filter (case-insensitive substring)")
+    parser.add_argument(
+        "-t", "--tab", help="tab name filter (case-insensitive substring)"
+    )
     parser.add_argument("-n", "--name", required=True, help="new tab name")
     return parser
 
@@ -62,10 +64,12 @@ def main() -> None:
     args = parse_args()
 
     session = args.session or find_current_session()
-    metadata = parse_metadata(find_session_metadata_file(session))
+    metadata = load_session_metadata(session)
 
     if args.tab:
         tab_position = unique_tab_position(metadata, args.tab)
+        if tab_position is None:
+            raise SystemExit(f"No tab matched query '{args.tab}'")
         tab = metadata.tabs_by_position[tab_position]
     else:
         tab = active_tab(metadata)
@@ -76,13 +80,13 @@ def main() -> None:
     origin_name = origin.name if origin else None
 
     if origin_name != tab.name:
-        run(zellij_action_cmd(session, "go-to-tab-name", tab.name))
+        run_zellij_action(session, "go-to-tab-name", tab.name)
 
     try:
-        run(zellij_action_cmd(session, "rename-tab", args.name))
+        run_zellij_action(session, "rename-tab", args.name)
     finally:
         if origin_name and origin_name != tab.name:
-            run(zellij_action_cmd(session, "go-to-tab-name", origin_name))
+            run_zellij_action(session, "go-to-tab-name", origin_name)
 
     print(f"Renamed tab {tab.name!r} to {args.name!r} in session '{session}'")
 

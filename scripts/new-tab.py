@@ -9,8 +9,7 @@ from zellij_common import (
     find_session_metadata_file,
     format_terminal_pane_summary,
     parse_metadata,
-    run,
-    zellij_action_cmd,
+    run_zellij_action,
 )
 
 
@@ -60,13 +59,13 @@ def main() -> None:
     args = parse_args()
 
     session = args.session or find_current_session()
-    cmd = zellij_action_cmd(session, "new-tab")
+    action_args = ["new-tab"]
     if args.cwd:
-        cmd.extend(["--cwd", args.cwd])
+        action_args.extend(["--cwd", args.cwd])
     if args.name:
-        cmd.extend(["--name", args.name])
+        action_args.extend(["--name", args.name])
 
-    run(cmd)
+    run_zellij_action(session, *action_args)
 
     if args.name:
         print(f"Created new tab '{args.name}' in session '{session}'")
