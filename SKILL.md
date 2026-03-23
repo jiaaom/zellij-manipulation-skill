@@ -1,6 +1,6 @@
 ---
 name: Zellij-Manipulation
-description: Inspect and control an existing local zellij session from OpenClaw. Use for reading panes, sending keys, running commands in panes, and managing tabs without using attach.
+description: Inspect and control an existing local zellij session from OpenClaw. Use for reading panes, sending keys, running commands in panes, and managing tabs without manually using attach.
 homepage: https://zellij.dev
 metadata: {"moltbot":{"emoji":"🪟","os":["darwin","linux"],"requires":{"bins":["zellij","python3"]},"install":[{"id":"brew","kind":"brew","formula":"zellij","bins":["zellij"],"label":"Install Zellij (brew)"},{"id":"cargo","kind":"cargo","crate":"zellij","bins":["zellij"],"label":"Install Zellij (Cargo)"}]}}
 ---
@@ -9,7 +9,7 @@ metadata: {"moltbot":{"emoji":"🪟","os":["darwin","linux"],"requires":{"bins":
 
 Use this skill to work with an already-running zellij session.
 
-Do not use `zellij attach` from an agent.
+Do not call `zellij attach` manually from an agent. Use the Python helpers instead; they automatically start a hidden attach helper when a live session is detached.
 
 ## Session resolution
 
@@ -17,8 +17,10 @@ For the Python helpers, `--session` is optional:
 
 - use `--session` if you know the target
 - otherwise use the current session
-- otherwise use the only live non-exited session
+- otherwise use the only live session
 - otherwise fail and require `--session`
+
+The helper scripts use the same CLI for both attached and detached live sessions.
 
 ## Discover
 
@@ -57,6 +59,8 @@ python3 {baseDir}/scripts/dump-pane.py --tab work --pane-id 2 --full
 Detailed notes:
 
 - See `{baseDir}/references/dump-pane.md`
+
+Detached live sessions are handled automatically. There is no separate detached-only flag.
 
 ## Write
 
@@ -112,10 +116,11 @@ python3 {baseDir}/scripts/change-focus.py --tab work --pane-id 2
 
 ## Caveats
 
-- These helpers currently assume the target session is live/attached.
-- Detached sessions in `EXITED - attach to resurrect` state are not supported by the current action-based approach.
+- Live detached sessions are supported through an automatic hidden PTY-backed attach helper.
+- Sessions in `EXITED - attach to resurrect` state are still not supported.
 - These helpers work by focusing the target pane, acting, then restoring focus.
 - They read screen/scrollback, not structured application state.
 - `dump-pane.py` is useful for TUIs like `btop`, but treat the result as a screen snapshot.
+- The hidden helper defaults to a `120x40` PTY and can be tuned with `OPENCLAW_ZELLIJ_HELPER_COLS` and `OPENCLAW_ZELLIJ_HELPER_ROWS`.
 - In the sandboxed exec context, raw `zellij action ...` can fail with `There is no active session!`.
 - The Python helpers are intended for the approved real-user execution path outside the sandbox.

@@ -18,7 +18,7 @@ Use `dump-pane.py` when an agent needs to inspect:
 - a full-screen TUI such as `btop`
 - the current visible state of an interactive program
 
-Do not use `zellij attach`.
+Do not call `zellij attach` directly. `dump-pane.py` automatically starts a hidden PTY-backed attach helper when a live session is detached.
 
 ## Requirement
 
@@ -72,7 +72,7 @@ python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work --title-q
 
 ## Arguments
 
-- `--session`: optional target zellij session; when omitted the script uses the current session, or the only live non-exited session, and otherwise fails
+- `--session`: optional target zellij session; when omitted the script uses the current session, or the only live session, and otherwise fails. Detached live sessions are handled automatically; `EXITED - attach to resurrect` sessions are still unsupported.
 - `--pane-id`: target pane id, eg. `2` or `terminal_2`
 - `--kind`: `terminal` or `plugin`; default is `terminal`
 - `--tab`: case-insensitive tab-name filter; preferred when tab names are stable
@@ -113,4 +113,6 @@ If restoration fails, the dump may still succeed, but the operator should assume
 
 - This approach is focus-moving, not pane-addressed RPC.
 - It depends on `zellij action go-to-tab-name`, `focus-next-pane`, `list-clients`, and `dump-screen`.
+- Detached live sessions are handled through an automatic hidden PTY attach fallback.
+- `EXITED - attach to resurrect` sessions are not supported.
 - It reads what zellij can dump, which is ideal for visible screen state but not necessarily full semantic application state.
