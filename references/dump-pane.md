@@ -34,10 +34,18 @@ So the script is intended for the approved, non-interactive execution path outsi
 
 ## Usage
 
+Recommended workflow:
+
+1. run `find-panes.py` first to discover the current tabs and pane ids
+2. use `--tab` by itself when the target tab has one terminal pane
+3. only use `--pane-id` when `find-panes.py` shows multiple terminal panes in the same tab
+4. never guess pane ids; reuse the returned `terminal_*` id literally
+
 Basic:
 
 ```bash
-python3 {baseDir}/scripts/dump-pane.py --session my-session --pane-id 2
+python3 {baseDir}/scripts/find-panes.py --session my-session
+python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work
 ```
 
 Target a tab explicitly:
@@ -49,19 +57,19 @@ python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work
 Target a specific pane inside a tab:
 
 ```bash
-python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work --pane-id 2
+python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work --pane-id terminal_20
 ```
 
 Limit output:
 
 ```bash
-python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work --pane-id 2 --lines 80
+python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work --pane-id terminal_20 --lines 80
 ```
 
 Dump full scrollback:
 
 ```bash
-python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work --pane-id 2 --full
+python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work --pane-id terminal_20 --full
 ```
 
 Resolve by title:
@@ -87,6 +95,7 @@ python3 {baseDir}/scripts/dump-pane.py --session my-session --tab work --title-q
 - If a tab contains multiple terminal panes, `--pane-id` is required. The script will refuse to guess.
 - If `--tab` is provided, the script requires exactly one matching tab.
 - If multiple panes match, the script prefers the focused one. Otherwise it fails rather than guessing.
+- If a tab or pane id does not match, the script prints the available tabs or pane ids so the caller can retry with a real target.
 
 ## Interactive programs
 

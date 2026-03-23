@@ -41,6 +41,14 @@ python3 {baseDir}/scripts/find-sessions.py [-q pattern]
 
 Prefer `--tab` because tab names are more stable than pane titles.
 
+Recommended workflow:
+
+1. run `find-panes.py` first
+2. choose the target tab from the returned tab list
+3. use `dump-pane.py --tab ...` when that tab has a single terminal pane
+4. only add `--pane-id` when `find-panes.py` shows multiple terminal panes in the same tab
+5. never guess pane ids; reuse the real `terminal_*` id returned by the scripts
+
 Rules:
 
 - if a tab has one terminal pane, `--tab` is enough
@@ -52,8 +60,9 @@ Rules:
 Dump a pane:
 
 ```bash
-python3 {baseDir}/scripts/dump-pane.py --tab work --pane-id 2 --lines 80
-python3 {baseDir}/scripts/dump-pane.py --tab work --pane-id 2 --full
+python3 {baseDir}/scripts/find-panes.py [--session session]
+python3 {baseDir}/scripts/dump-pane.py --tab work --lines 80
+python3 {baseDir}/scripts/dump-pane.py --tab work --pane-id terminal_20 --full
 ```
 
 Detailed notes:
@@ -67,18 +76,20 @@ Detached live sessions are handled automatically. There is no separate detached-
 Run a shell command in a pane:
 
 ```bash
-python3 {baseDir}/scripts/run-in-pane.py --tab work --pane-id 5 -- pwd
-python3 {baseDir}/scripts/run-in-pane.py --tab work --pane-id 2 -- btop
+python3 {baseDir}/scripts/find-panes.py [--session session]
+python3 {baseDir}/scripts/run-in-pane.py --tab work --pane-id terminal_20 -- pwd
+python3 {baseDir}/scripts/run-in-pane.py --tab work --pane-id terminal_20 -- btop
 python3 {baseDir}/scripts/run-in-pane.py --tab scratch -- pwd
 ```
 
 Send keys or control input:
 
 ```bash
-python3 {baseDir}/scripts/send-keys.py --tab work --pane-id 2 --text "hello"
-python3 {baseDir}/scripts/send-keys.py --tab work --pane-id 2 --control enter
-python3 {baseDir}/scripts/send-keys.py --tab work --pane-id 2 --control ctrl-c
-python3 {baseDir}/scripts/send-keys.py --tab work --pane-id 2 --control up
+python3 {baseDir}/scripts/find-panes.py [--session session]
+python3 {baseDir}/scripts/send-keys.py --tab work --pane-id terminal_20 --text "hello"
+python3 {baseDir}/scripts/send-keys.py --tab work --pane-id terminal_20 --control enter
+python3 {baseDir}/scripts/send-keys.py --tab work --pane-id terminal_20 --control ctrl-c
+python3 {baseDir}/scripts/send-keys.py --tab work --pane-id terminal_20 --control up
 python3 {baseDir}/scripts/send-keys.py --tab scratch --text "echo hello"
 ```
 
@@ -111,7 +122,7 @@ Change focus:
 
 ```bash
 python3 {baseDir}/scripts/change-focus.py --tab work
-python3 {baseDir}/scripts/change-focus.py --tab work --pane-id 2
+python3 {baseDir}/scripts/change-focus.py --tab work --pane-id terminal_20
 ```
 
 ## Caveats
