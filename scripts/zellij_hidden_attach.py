@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 STATE_DIR = Path(tempfile.gettempdir()) / "openclaw-zellij-hidden-attach"
-DEFAULT_TTL_SECONDS = 60.0
+DEFAULT_TTL_SECONDS = 15.0
 DEFAULT_START_TIMEOUT_SECONDS = 5.0
 DEFAULT_PTY_COLS = 120
 DEFAULT_PTY_ROWS = 40
@@ -60,6 +60,10 @@ def _session_token(session: str) -> str:
 
 def _state_file(session: str) -> Path:
     return STATE_DIR / f"{_session_token(session)}.json"
+
+
+def helper_state_file(session: str) -> Path:
+    return _state_file(session)
 
 
 def _lock_file(session: str) -> Path:
@@ -167,6 +171,10 @@ def _read_state(session: str) -> HelperState | None:
         return None
 
 
+def read_helper_state(session: str) -> HelperState | None:
+    return _read_state(session)
+
+
 def _write_state(state: HelperState) -> None:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     state_file = _state_file(state.session_name)
@@ -179,6 +187,17 @@ def _clear_state(session: str) -> None:
     state_file = _state_file(session)
     if state_file.exists():
         state_file.unlink()
+
+
+def clear_helper_state(session: str) -> None:
+    _clear_state(session)
+
+
+def clear_helper_state_if_owner(session: str, helper_pid: int) -> None:
+    state = _read_state(session)
+    if state is None or state.helper_pid != helper_pid:
+        return
+    _clear_state(session)
 
 
 def _terminate_process(pid: int) -> None:
@@ -264,8 +283,6 @@ def ensure_hidden_attach(session: str) -> None:
             f"Session '{session}' is in EXITED/attach-to-resurrect state. "
             "The hidden attach helper only supports live sessions."
         )
-    if session_has_attached_client(session):
-        return
 
     ttl_seconds = float(
         os.environ.get("OPENCLAW_ZELLIJ_HELPER_TTL_SECONDS", DEFAULT_TTL_SECONDS)

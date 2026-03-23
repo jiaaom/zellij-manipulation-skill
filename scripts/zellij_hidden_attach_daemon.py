@@ -11,6 +11,12 @@ import struct
 import subprocess
 import sys
 import termios
+import time
+
+from zellij_hidden_attach import clear_helper_state_if_owner, read_helper_state
+
+
+STATE_FILE_GRACE_SECONDS = 2.0
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -35,6 +41,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    helper_pid = os.getpid()
+    daemon_started_at = time.monotonic()
     master_fd, slave_fd = pty.openpty()
     window_size = struct.pack("HHHH", args.rows, args.cols, 0, 0)
     fcntl.ioctl(slave_fd, termios.TIOCSWINSZ, window_size)
@@ -60,6 +68,14 @@ def main() -> None:
         while True:
             if child.poll() is not None:
                 raise SystemExit(child.returncode or 0)
+            state = read_helper_state(args.session)
+            if state is None:
+                if time.monotonic() - daemon_started_at >= STATE_FILE_GRACE_SECONDS:
+                    raise SystemExit(0)
+            elif state.helper_pid != helper_pid:
+                raise SystemExit(0)
+            elif time.time() - state.last_used_at > state.ttl_seconds:
+                raise SystemExit(0)
             readable, _, _ = select.select([master_fd], [], [], 0.5)
             if master_fd in readable:
                 try:
@@ -68,6 +84,7 @@ def main() -> None:
                 except OSError:
                     raise SystemExit(0)
     finally:
+        clear_helper_state_if_owner(args.session, helper_pid)
         try:
             os.close(master_fd)
         except OSError:
